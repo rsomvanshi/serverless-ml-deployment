@@ -1,2 +1,2 @@
 # serverless-ml-deployment
-Serverless deployment for lightweight machine learning model
+Serverless Machine Learning model deployment
