@@ -90,7 +90,7 @@ resource "aws_lambda_function" "predict" {
 # API GATEWAY
 
 resource "aws_api_gateway_rest_api" "predict" {
-  name        = "predict"
+  name        = "predict-${var.username}"
   description = "ML Model Prediction"
 }
 
