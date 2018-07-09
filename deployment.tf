@@ -1,5 +1,7 @@
 # Variables
 variable "username" {}
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
 
 # Configure the AWS Provider
 provider "aws" {
