@@ -11,7 +11,8 @@ print('Loading function')
 model = None
 def load_model():
     s3 = boto3.client('s3')
-    s3.download_file('rohans-test', 'SVMModel.pckl', '/tmp/SVMModel.pckl')
+    s3_bucket = os.environ['S3_BUCKET']
+    s3.download_file(s3_bucket, 'SVMModel.pckl', '/tmp/SVMModel.pckl')
     with open('/tmp/SVMModel.pckl', 'rb') as contents:
         model = pickle.load(contents)
     print("Model is now loaded in container")

@@ -16,17 +16,58 @@ resource "aws_s3_bucket" "s3_bucket" {
   acl    = "private"
 }
 
+resource "aws_s3_bucket_object" "lambda_package" {
+  bucket = "${aws_s3_bucket.s3_bucket.id}"
+  key    = "lambda_package.zip"
+  source = "lambda_package.zip"
+}
+
 resource "aws_s3_bucket_object" "model_file" {
   bucket = "${aws_s3_bucket.s3_bucket.id}"
   key    = "SVMModel.pckl"
   source = "SVMModel.pckl"
 }
 
-resource "aws_s3_bucket_object" "lambda_package" {
-  bucket = "${aws_s3_bucket.s3_bucket.id}"
-  key    = "lambda_package.zip"
-  source = "lambda_package.zip"
+resource "aws_iam_role" "lambda_role" {
+  name = "lambda-role-${var.username}"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
 }
+EOF
+}
+
+resource "aws_iam_role_policy" "lambda-policy" {
+  name = "lambda-policy-${var.username}"
+  role = "${aws_iam_role.lambda_role.id}"
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Action": [
+            "cloudwatch:*",
+            "s3:*",
+            "logs:*"
+          ],
+          "Effect": "Allow",
+          "Resource": "*"
+        }
+      ]
+}
+EOF
+}
+
 
 resource "aws_lambda_function" "predict" {
   function_name = "predict-${var.username}"
@@ -37,47 +78,14 @@ resource "aws_lambda_function" "predict" {
   handler = "lambda_handler.model_handler"
   runtime = "python3.6"
   role = "${aws_iam_role.lambda_role.arn}"
+  environment {
+    variables = {
+      S3_BUCKET = "${aws_s3_bucket.s3_bucket.id}"
+    }
+  }
+  depends_on = ["aws_s3_bucket_object.lambda_package"]
 }
 
-resource "aws_iam_role" "lambda_role" {
-  name = "lambda-role-${var.username}"
-  assume_role_policy = <<EOF
-            {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  },
-                  "Effect": "Allow",
-                  "Sid": ""
-                }
-              ]
-            }
-            EOF
-}
-
-resource "aws_iam_role_policy" "lambda-policy" {
-  name = "lambda-policy-${var.username}"
-  role = "${aws_iam_role.lambda_role.id}"
-  policy = <<EOF
-            {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": [
-                    "cloudwatch:*",
-                    "logs:*",
-                    "s3:*"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "*"
-                }
-              ]
-            }
-            EOF
-}
 
 # API GATEWAY
 
